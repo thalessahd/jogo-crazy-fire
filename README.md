@@ -11,3 +11,15 @@
 
         git config --global user.name SeuNomedeUsuário
         git config --global user.email seuEmail@exemplo.br
+
+### Passo a passo para executar o projeto
+
+* Abra o arquivo
+
+        src/ProjetoWindows.cbp 
+
+* Dentro do Code::Blocks, abra o arquivo
+
+        sources/main.cpp
+
+* Compile e execute a main.cpp
