@@ -22,6 +22,7 @@ int main( int argc, char* args[] ){
         //será feita a preparação do frame que será exibido na tela
         IniciaDesenho();
 
+        DesenhaRetangulo(200,200,50,90,VERMELHO);
         //todas as chamadas de desenho devem ser feitas aqui na ordem desejada
 
         //o frame totalmente pronto será mostrado na tela
