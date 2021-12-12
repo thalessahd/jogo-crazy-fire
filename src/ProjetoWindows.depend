@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1638692419 source:c:\users\renan\desktop\cf\jogo-crazy-fire\src\main.cpp
+1639297599 source:c:\users\renan\desktop\cf\jogo-crazy-fire\src\main.cpp
 	"PIG.h"
 
 1638653155 c:\users\renan\desktop\cf\jogo-crazy-fire\include\pig.h
@@ -389,7 +389,7 @@
 	"begin_code.h"
 	"close_code.h"
 
-1638668367 c:\users\renan\desktop\cf\jogo-crazy-fire\include\pigtipos.h
+1639255839 c:\users\renan\desktop\cf\jogo-crazy-fire\include\pigtipos.h
 	"direct.h"
 	"unistd.h"
 

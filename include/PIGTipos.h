@@ -2,8 +2,8 @@
 Principais definições utilizadas pela PIG
 ********************************/
 
-#define PIG_ALT_TELA                    768
-#define PIG_LARG_TELA                   1024
+#define PIG_ALT_TELA                    770
+#define PIG_LARG_TELA                   960
 
 #define PIG_AFASTAMENTO_MINIMO          0.1
 #define PIG_AFASTAMENTO_MAXIMO          100.0
