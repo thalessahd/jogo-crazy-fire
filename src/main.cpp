@@ -19,22 +19,18 @@ void test_draw(){
 }
 
 //Desenha todos os elementos da hud
-void hud_draw(int char_id, int hp, int extinguisher_id, int ext1, int ext2, int ext3, int ext4, int ext5, int *charge){
+void hud_draw(int char_id, int hp, int extinguisher_id, int *ext, int *charge){
     int i =0;
     int posx[5] = {490,590,690,790,890};
 
     DesenhaObjeto(char_id);
     DesenhaRetangulo(60,PIG_ALT_TELA-40,30,hp,VERMELHO);
-    DesenhaObjeto(ext1);
-    DesenhaObjeto(ext2);
-    DesenhaObjeto(ext3);
-    DesenhaObjeto(ext4);
-    DesenhaObjeto(ext5);
-    SetColoracaoObjeto(ext1,BRANCO);
-    SetColoracaoObjeto(ext2,BRANCO);
-    SetColoracaoObjeto(ext3,BRANCO);
-    SetColoracaoObjeto(ext4,BRANCO);
-    SetColoracaoObjeto(ext5,BRANCO);
+
+    //Desenha extintores na HUD
+    for(i=0;i<5;i++){
+        DesenhaObjeto(ext[i]);
+        SetColoracaoObjeto(ext[i],BRANCO);
+    }
 
     //Escrita da "munição" na tela
     for(i=0;i<5;i++){
@@ -48,13 +44,37 @@ void hud_draw(int char_id, int hp, int extinguisher_id, int ext1, int ext2, int 
     }
 
     //Destaca o extintor selecionado
-    switch(extinguisher_id){
-        case 1: SetColoracaoObjeto(ext1,VERDE);break;
-        case 2: SetColoracaoObjeto(ext2,VERDE);break;
-        case 3: SetColoracaoObjeto(ext3,VERDE);break;
-        case 4: SetColoracaoObjeto(ext4,VERDE);break;
-        case 5: SetColoracaoObjeto(ext5,VERDE);break;
-    }
+    SetColoracaoObjeto(ext[extinguisher_id-1],VERDE);
+}
+
+//Mensagem de game over
+void gameover(){
+    EscreverCentralizada("GAME OVER",PIG_LARG_TELA/2,map_height/2,VERMELHO);
+}
+
+//Inicia os timers controladores após o fim do tutorial
+void starttimers(int t1, int t2, int t3, int t4, int t5, int t6){
+    ReiniciaTimer(t1);
+    ReiniciaTimer(t2);
+    ReiniciaTimer(t3);
+    ReiniciaTimer(t4);
+    ReiniciaTimer(t5);
+    ReiniciaTimer(t6);
+}
+
+//Escreve o tutorial na tela
+void draw_tutorial(){
+    EscreverCentralizada("TUTORIAL",PIG_LARG_TELA/2,PIG_ALT_TELA-100,VERMELHO);
+    EscreverEsquerda("(1) - Extintor de Espuma -> Classes A e B",50,600,BRANCO);
+    EscreverEsquerda("(2) - Extintor de Dioxido de Carbono -> Classes B e C",50,500,BRANCO);
+    EscreverEsquerda("(3) - Extintor Quimico -> Classes B, C e D",50,400,BRANCO);
+    EscreverEsquerda("(4) - Extintor de Agua -> Classe A",50,300,BRANCO);
+    EscreverEsquerda("(5) - Extintor Especial -> Todas as Classes",50,200,BRANCO);
+    EscreverCentralizada("APERTE ENTER PARA INICIAR",PIG_LARG_TELA/2,100,VERDE);
+}
+
+void game_win(){
+    EscreverCentralizada("VITORIA",PIG_LARG_TELA/2,map_height/2,VERDE);
 }
 
 int main( int argc, char* args[] ){
@@ -62,39 +82,33 @@ int main( int argc, char* args[] ){
     CriaJogo("Crazy Fire");
 
     //Variaveis do personagem principal
-    int x_main_char, y_main_char = 0, i = 0;
-    int main_char_length = 40, main_char_height = 40, hp = 360, ext_id = 1;
+    int x_main_char = 0, y_main_char = 0, i = 0, x_enemy = 0, y_enemy = 0, kills = 0;
+    int main_char_length = 40, main_char_height = 40, hp = 360, ext_id = 1, spawn_id = 0;
 
     //Munição inicial para cada extintor
-    int charge[5] = {100,100,100,100,100};
+    int charge[5] = {100,100,100,100,100}, enemy[10] = {0,0,0,0,0,0,0,0,0,0}, enemy_id[10] = {0,0,0,0,0,0,0,0,0,0}, extinguisher[5] = {0,0,0,0,0}, invis_wall[8] = {0,0,0,0,0,0,0,0};
 
-    //Define de quanto em quanto tempo é checado um input de movimento, a diminuição da munição e o spawn de recarga
-    float move_check_time = 0.002, empty_ext_time = 0.07, reload_spawn_time = 5;
+    //Define de quanto em quanto tempo é checado um input de movimento, a diminuição da munição, o spawn de recarga, o spawn de inimigos e o dano sofrido, respectivamente.
+    float move_check_time = 0.002, empty_ext_time = 0.01, reload_spawn_time = 5, enemy_spawn_time = 3, enemy_move_time = 0.008, damage_taken_time = 0.025;
 
-    bool draw_smoke = false, draw_reload = false;
+    bool draw_smoke = false, draw_reload = false, game_over = false, final_msg = false, tutorial = true, win = false;
+    bool draw_enemy[10] = {false,false,false,false,false,false,false,false,false,false};
 
     meuTeclado = GetTeclado();
 
-    int timer = CriaTimer();         //Para checar movimento
-    int timershot = CriaTimer();     //Para checar disparo do extintor
-    int timer_reload = CriaTimer();  //Para checar spawn do extintor de recarga
+    int timer = CriaTimer(1);            //Para checar movimento
+    int timershot = CriaTimer(1);        //Para checar disparo do extintor
+    int timer_reload = CriaTimer(1);     //Para checar spawn do extintor de recarga
+    int timer_enemy = CriaTimer(1);      //Para checar spawn dos inimigos
+    int timer_enemy_move = CriaTimer(1); //Para checar movimento do inimigo
+    int timer_damage = CriaTimer(1);     //Para checar dano sofrido
 
     //Criando imagens dos extintores para a HUD
-    int extinguisher1 = CriaObjeto("..//images//extinguisher.png");
-    int extinguisher2 = CriaObjeto("..//images//extinguisher.png");
-    int extinguisher3 = CriaObjeto("..//images//extinguisher.png");
-    int extinguisher4 = CriaObjeto("..//images//extinguisher.png");
-    int extinguisher5 = CriaObjeto("..//images//extinguisher.png");
-    SetDimensoesObjeto(extinguisher1,50,50);
-    SetDimensoesObjeto(extinguisher2,50,50);
-    SetDimensoesObjeto(extinguisher3,50,50);
-    SetDimensoesObjeto(extinguisher4,50,50);
-    SetDimensoesObjeto(extinguisher5,50,50);
-    MoveObjeto(extinguisher1,450,PIG_ALT_TELA - 50);
-    MoveObjeto(extinguisher2,550,PIG_ALT_TELA - 50);
-    MoveObjeto(extinguisher3,650,PIG_ALT_TELA - 50);
-    MoveObjeto(extinguisher4,750,PIG_ALT_TELA - 50);
-    MoveObjeto(extinguisher5,850,PIG_ALT_TELA - 50);
+    for(i=0;i<5;i++){
+        extinguisher[i] = CriaObjeto("..//images//extinguisher.png");
+        SetDimensoesObjeto(extinguisher[i],50,50);
+        MoveObjeto(extinguisher[i],450+100*i,PIG_ALT_TELA-50);
+    }
 
     int reload = CriaObjeto("..//images//extinguisher.png");
     SetDimensoesObjeto(reload,40,40);
@@ -108,6 +122,11 @@ int main( int argc, char* args[] ){
     int smoke = CriaObjeto("..//images//smoke.png");
     SetDimensoesObjeto(smoke,50,50);
 
+    for(i=0;i<10;i++){
+        enemy[i] = CriaObjeto("..//images//flame.png");
+        SetDimensoesObjeto(enemy[i],50,50);
+    }
+
     //Gerando o sprite do personagem principal e aplicando suas dimensões
     int main_char = CriaObjeto("..//images//main_char.png",1);
     CarregaArquivoFramesObjeto(main_char,"..//frames//main_char.txt");
@@ -116,33 +135,22 @@ int main( int argc, char* args[] ){
     MudaFrameObjeto(main_char,1);
 
     //Criando paredes de colisão
-    int invis_wall_bot = CriaObjeto("..//images//branco.png",0);
-    int invis_wall_left = CriaObjeto("..//images//branco.png",0);
-    int invis_wall_bot2 = CriaObjeto("..//images//branco.png",0);
-    int invis_wall_top  = CriaObjeto("..//images//branco.png",0);
-    int invis_wall_top2 = CriaObjeto("..//images//branco.png",0);      //Por algum motivo criar apenas um e replicar para o resto n estava funcionando
-    int invis_wall_left2  = CriaObjeto("..//images//branco.png",0);    //Fazer um por um foi o unico jeito que rodou aqui
-    int invis_wall_right  = CriaObjeto("..//images//branco.png",0);
-    int invis_wall_right2 = CriaObjeto("..//images//branco.png",0);
+    for(i=0;i<8;i++){
+        invis_wall[i] = CriaObjeto("..//images//branco.png",0);
+        if(i<=3){
+            SetDimensoesObjeto(invis_wall[i],40,(PIG_LARG_TELA/2)-60);
+        }else{
+            SetDimensoesObjeto(invis_wall[i],(map_height/2)-60,40);
+        }
+    }
 
-    SetDimensoesObjeto(invis_wall_bot,40,(PIG_LARG_TELA/2)-60);
-    SetDimensoesObjeto(invis_wall_bot2,40,(PIG_LARG_TELA/2)-60);
-    SetDimensoesObjeto(invis_wall_top,40,(PIG_LARG_TELA/2)-60);
-    SetDimensoesObjeto(invis_wall_top2,40,(PIG_LARG_TELA/2)-60);
-
-    MoveObjeto(invis_wall_bot,0,0);
-    MoveObjeto(invis_wall_bot2,(PIG_LARG_TELA/2)+60,0);
-    MoveObjeto(invis_wall_top,0,map_height-40);
-    MoveObjeto(invis_wall_top2,(PIG_LARG_TELA/2)+60,map_height-40);
-
-    SetDimensoesObjeto(invis_wall_left,(map_height/2)-60,40);
-    SetDimensoesObjeto(invis_wall_left2,(map_height/2)-60,40);
-    SetDimensoesObjeto(invis_wall_right,(map_height/2)-60,40);
-    SetDimensoesObjeto(invis_wall_right2,(map_height/2)-60,40);
-
-    MoveObjeto(invis_wall_left2,0,(map_height/2)+60);
-    MoveObjeto(invis_wall_right,PIG_LARG_TELA-40,0);
-    MoveObjeto(invis_wall_right2,PIG_LARG_TELA-40,(map_height/2)+60);
+    MoveObjeto(invis_wall[0],0,0); //bot
+    MoveObjeto(invis_wall[1],(PIG_LARG_TELA/2)+60,0); //bot2
+    MoveObjeto(invis_wall[2],0,map_height-40); //top
+    MoveObjeto(invis_wall[3],(PIG_LARG_TELA/2)+60,map_height-40); //top2
+    MoveObjeto(invis_wall[4],0,(map_height/2)+60); //left2
+    MoveObjeto(invis_wall[5],PIG_LARG_TELA-40,0); //right
+    MoveObjeto(invis_wall[6],PIG_LARG_TELA-40,(map_height/2)+60); //right2
 
     while(JogoRodando()){
 
@@ -152,19 +160,19 @@ int main( int argc, char* args[] ){
 
         //Checa por um input de teclado a cada X segundos e não movimenta o personagem caso ele se encontre em colisão com o mapa | muda o sprite do personagem de acordo com a direção do movimento
         if(TempoDecorrido(timer) > move_check_time){
-            if(y_main_char < map_height-40 && (meuTeclado[PIG_TECLA_CIMA] || meuTeclado[PIG_TECLA_w]) && (!TestaColisaoObjetos(main_char,invis_wall_top) && !TestaColisaoObjetos(main_char,invis_wall_top2) && (!TestaColisaoObjetos(main_char,invis_wall_left2) || x_main_char >=39) && (!TestaColisaoObjetos(main_char,invis_wall_right2) || x_main_char <=PIG_LARG_TELA-79))){
+            if(y_main_char < map_height-40 && (meuTeclado[PIG_TECLA_CIMA] || meuTeclado[PIG_TECLA_w]) && (!TestaColisaoObjetos(main_char,invis_wall[2]) && !TestaColisaoObjetos(main_char,invis_wall[3]) && (!TestaColisaoObjetos(main_char,invis_wall[4]) || x_main_char >=39) && (!TestaColisaoObjetos(main_char,invis_wall[6]) || x_main_char <=PIG_LARG_TELA-79))){
                 DeslocaObjeto(main_char,0,+1);
                 MudaFrameObjeto(main_char,2);
             }
-            if(y_main_char > 0 && (meuTeclado[PIG_TECLA_BAIXO] || meuTeclado[PIG_TECLA_s]) && (!TestaColisaoObjetos(main_char,invis_wall_bot) && !TestaColisaoObjetos(main_char,invis_wall_bot2) && (!TestaColisaoObjetos(main_char,invis_wall_left) || x_main_char >=39) && (!TestaColisaoObjetos(main_char,invis_wall_right) || x_main_char <=PIG_LARG_TELA-79))){
+            if(y_main_char > 0 && (meuTeclado[PIG_TECLA_BAIXO] || meuTeclado[PIG_TECLA_s]) && (!TestaColisaoObjetos(main_char,invis_wall[0]) && !TestaColisaoObjetos(main_char,invis_wall[1]) && (!TestaColisaoObjetos(main_char,invis_wall[7]) || x_main_char >=39) && (!TestaColisaoObjetos(main_char,invis_wall[5]) || x_main_char <=PIG_LARG_TELA-79))){
                 DeslocaObjeto(main_char,0,-1);
                 MudaFrameObjeto(main_char,1);
             }
-            if(x_main_char > 0 && (meuTeclado[PIG_TECLA_ESQUERDA] || meuTeclado[PIG_TECLA_a]) && (!TestaColisaoObjetos(main_char,invis_wall_left) && !TestaColisaoObjetos(main_char,invis_wall_left2) && (!TestaColisaoObjetos(main_char,invis_wall_bot) || y_main_char >=39) && (!TestaColisaoObjetos(main_char,invis_wall_top) || y_main_char <= map_height-79))){
+            if(x_main_char > 0 && (meuTeclado[PIG_TECLA_ESQUERDA] || meuTeclado[PIG_TECLA_a]) && (!TestaColisaoObjetos(main_char,invis_wall[7]) && !TestaColisaoObjetos(main_char,invis_wall[4]) && (!TestaColisaoObjetos(main_char,invis_wall[0]) || y_main_char >=39) && (!TestaColisaoObjetos(main_char,invis_wall[2]) || y_main_char <= map_height-79))){
                 DeslocaObjeto(main_char,-1,0);
                 MudaFrameObjeto(main_char,4);
             }
-            if(x_main_char < PIG_LARG_TELA-40 && (meuTeclado[PIG_TECLA_DIREITA] || meuTeclado[PIG_TECLA_d]) && (!TestaColisaoObjetos(main_char,invis_wall_right) && !TestaColisaoObjetos(main_char,invis_wall_right2) && (!TestaColisaoObjetos(main_char,invis_wall_bot2) || y_main_char >=39) && (!TestaColisaoObjetos(main_char,invis_wall_top2) || y_main_char <= map_height-79))){
+            if(x_main_char < PIG_LARG_TELA-40 && (meuTeclado[PIG_TECLA_DIREITA] || meuTeclado[PIG_TECLA_d]) && (!TestaColisaoObjetos(main_char,invis_wall[5]) && !TestaColisaoObjetos(main_char,invis_wall[6]) && (!TestaColisaoObjetos(main_char,invis_wall[1]) || y_main_char >=39) && (!TestaColisaoObjetos(main_char,invis_wall[3]) || y_main_char <= map_height-79))){
                 DeslocaObjeto(main_char,+1,0);
                 MudaFrameObjeto(main_char,3);
             }
@@ -207,6 +215,9 @@ int main( int argc, char* args[] ){
                 draw_smoke = true;
             }
         }
+        if(!draw_smoke){
+            MoveObjeto(smoke,0,PIG_ALT_TELA);
+        }
 
         //Spawna extintor de recarga
         if(TempoDecorrido(timer_reload) > reload_spawn_time){
@@ -220,6 +231,7 @@ int main( int argc, char* args[] ){
             break;
         }
 
+        //Pegar recarga de extintor no mapa
         if(TestaColisaoObjetos(main_char,reload) && draw_reload){
             for(i=0;i<5;i++){
                 if(charge[i]>=75){
@@ -232,27 +244,168 @@ int main( int argc, char* args[] ){
             ReiniciaTimer(timer_reload);
         }
 
+        //Spawn de inimigos
+        if(TempoDecorrido(timer_enemy) > enemy_spawn_time){
+            spawn_id = rand()%4;
+
+            for(i=0;i<10;i++){
+                if(!draw_enemy[i]){
+                    enemy_id[i] = rand()%4;
+                    if(spawn_id == 0){
+                        MoveObjeto(enemy[i],(PIG_LARG_TELA/2),map_height-30);
+                    }else if(spawn_id == 1){
+                        MoveObjeto(enemy[i],PIG_LARG_TELA,(map_height)/2);
+                    }else if(spawn_id == 2){
+                        MoveObjeto(enemy[i],(PIG_LARG_TELA/2),-50);
+                    }else if(spawn_id == 3){
+                        MoveObjeto(enemy[i],-50,(map_height)/2);
+                    }
+                    draw_enemy[i] = true;
+                    break;
+                }
+            }
+            ReiniciaTimer(timer_enemy);
+        }
+
+        //Movimentação dos inimigos
+        if(TempoDecorrido(timer_enemy_move) > enemy_move_time){
+            for(i=0;i<10;i++){
+                if(draw_enemy[i]){
+                    GetXYObjeto(enemy[i],&x_enemy,&y_enemy);
+                if(x_enemy < x_main_char && x_enemy < PIG_LARG_TELA-85){
+                    x_enemy++;
+                }else if(x_enemy > x_main_char && x_enemy > 35){
+                    x_enemy--;
+                }
+                if(y_enemy < y_main_char && y_enemy < map_height-85){
+                    y_enemy++;
+                }else if(y_enemy > y_main_char && y_enemy > 35){
+                    y_enemy--;
+                }
+                MoveObjeto(enemy[i],x_enemy,y_enemy);
+                }
+            }
+            ReiniciaTimer(timer_enemy_move);
+        }
+
+        //Mecanicas de dano sofrido
+        SetColoracaoObjeto(main_char,BRANCO);
+        for(i=0;i<10;i++){
+            if(TestaColisaoObjetos(main_char,enemy[i])){
+                SetColoracaoObjeto(main_char,VERMELHO);
+                if(TempoDecorrido(timer_damage) > damage_taken_time){
+                    hp--;
+                    ReiniciaTimer(timer_damage);
+                }
+            }
+        }
+
+        //Colisão entre o disparo e os inimigos
+        for(i=0;i<10;i++){
+            if(draw_enemy[i]){
+                if(TestaColisaoObjetos(enemy[i],smoke)){
+                    if(ext_id == 1 && (enemy_id[i] == 0 || enemy_id[i] == 1)){
+                        draw_enemy[i] = false;
+                        MoveObjeto(enemy[i],0,PIG_ALT_TELA);
+                        //DestroiObjeto(enemy[i]);
+                        kills++;
+                    }
+                    if(ext_id == 2 && (enemy_id[i] == 1 || enemy_id[i] == 2)){
+                        draw_enemy[i] = false;
+                        MoveObjeto(enemy[i],0,PIG_ALT_TELA);
+                        //DestroiObjeto(enemy[i]);
+                        kills++;
+                    }
+                    if(ext_id == 3 && (enemy_id[i] == 1 || enemy_id[i] == 2 || enemy_id[i] == 3)){
+                        draw_enemy[i] = false;
+                        MoveObjeto(enemy[i],0,PIG_ALT_TELA);
+                        //DestroiObjeto(enemy[i]);
+                        kills++;
+                    }
+                    if(ext_id == 4 && enemy_id[i] == 0){
+                        draw_enemy[i] = false;
+                        MoveObjeto(enemy[i],0,PIG_ALT_TELA);
+                        //DestroiObjeto(enemy[i]);
+                        kills++;
+                    }
+                    if(ext_id == 5){
+                        draw_enemy[i] = false;
+                        MoveObjeto(enemy[i],0,PIG_ALT_TELA);
+                        //DestroiObjeto(enemy[i]);
+                        kills++;
+                    }
+                }
+            }
+        }
+
+        //Condição de vitória
+        if(kills >= 10){
+            win = true;
+        }
+
+        //Condição de game over
+        if(hp <= 0){
+            game_over = true;
+        }
+
         IniciaDesenho();
 
-        //Desenha o mapa
-        DesenhaSpriteSimples("..//images//map_holder.png",0,0,0);
+        //Começa mostrando o tutorial na tela
+        if(tutorial){
+            draw_tutorial();
+            if(meuTeclado[PIG_TECLA_ENTER]){
+                tutorial = false;
+                starttimers(timer,timershot,timer_damage,timer_enemy,timer_enemy_move,timer_reload);
+            }
+        }else{
 
-        //Desenha HUD e retangulos para teste
-        test_draw();
-        hud_draw(hudchar,hp,ext_id,extinguisher1,extinguisher2,extinguisher3,extinguisher4,extinguisher5,charge);
+            //Desenha o mapa
+            DesenhaSpriteSimples("..//images//map_holder.png",0,0,0);
 
-        //Desenha personagem principal
-        DesenhaObjeto(main_char);
+            //Desenha HUD e retangulos para teste
+            test_draw();
+            hud_draw(hudchar,hp,ext_id,extinguisher,charge);
 
-        //Desenha fumaça do extintor e extintor de recarga
-        if(draw_smoke){
-            DesenhaObjeto(smoke);
-            draw_smoke = false;
+            //Desenha personagem principal
+            DesenhaObjeto(main_char);
+
+            //Desenha fumaça do extintor e extintor de recarga
+            if(draw_smoke){
+                DesenhaObjeto(smoke);
+                draw_smoke = false;
+            }
+            if(draw_reload){
+                DesenhaObjeto(reload);
+            }
+
+            //Desenha inimigos
+            for(i=0;i<10;i++){
+                if(draw_enemy[i]){
+                    DesenhaObjeto(enemy[i]);
+                    GetXYObjeto(enemy[i],&x_enemy,&y_enemy);
+                    switch(enemy_id[i]){
+                        case 0: EscreverCentralizada("A",x_enemy+25,y_enemy);break;
+                        case 1: EscreverCentralizada("B",x_enemy+25,y_enemy);break;
+                        case 2: EscreverCentralizada("C",x_enemy+25,y_enemy);break;
+                        case 3: EscreverCentralizada("D",x_enemy+25,y_enemy);break;
+                    }
+                }
+            }
+
+            if(final_msg){
+                Espera(3000);
+                break;
+            }
+
+            if(game_over){
+                gameover();
+                final_msg = true;
+            }
+            if(win){
+                game_win();
+                final_msg = true;
+            }
         }
-        if(draw_reload){
-            DesenhaObjeto(reload);
-        }
-
         EncerraDesenho();
 
     }
