@@ -4,7 +4,7 @@ PIG_Evento evento;          //evento ser tratado a cada passada do loop principa
 PIG_Teclado meuTeclado;     //variável como mapeamento do teclado
 
 int map_height = 720;
-// Tamanho do mapa = 960x720
+// Tamanho do mapa = 800x600
 
 //Desenha os retangulos para testes
 void test_draw(){
