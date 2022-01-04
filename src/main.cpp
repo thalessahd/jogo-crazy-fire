@@ -4,9 +4,15 @@ PIG_Evento evento;          //evento ser tratado a cada passada do loop principa
 PIG_Teclado meuTeclado;     //variável como mapeamento do teclado
 
 int map_height = 720;
-// Tamanho do mapa = 800x600
+// Tamanho do mapa = 960x720 | Tamanho da tela: 960x770
 
-//Desenha os retangulos para testes
+/*
+Desenha os retangulos para testes.
+O jogador não pode passar dos retangulos em azul (há colisão)
+Os retangulos em verde representam as entradas de onde saem os inimigos, o jogador pode andar nessa área
+Estes retangulos NÃO estarão presentes na versão final do jogo, servem apenas para fins de testes enquanto o modelo final do mapa não foi implementado.
+*/
+
 void test_draw(){
     DesenhaRetangulo(0,0,40,PIG_LARG_TELA,AZUL);
     DesenhaRetangulo(0,0,map_height,40,AZUL);
@@ -21,10 +27,10 @@ void test_draw(){
 //Desenha todos os elementos da hud
 void hud_draw(int char_id, int hp, int extinguisher_id, int *ext, int *charge){
     int i =0;
-    int posx[5] = {490,590,690,790,890};
+    int posx[5] = {490,590,690,790,890}; //Posição x de cada numero de munição dos extintores
 
-    DesenhaObjeto(char_id);
-    DesenhaRetangulo(60,PIG_ALT_TELA-40,30,hp,VERMELHO);
+    DesenhaObjeto(char_id); //Desenha a imagem do personagem principal na HUD
+    DesenhaRetangulo(60,PIG_ALT_TELA-40,30,hp,VERMELHO); //Desenha a barra de vida do personagem na HUD
 
     //Desenha extintores na HUD
     for(i=0;i<5;i++){
@@ -32,7 +38,12 @@ void hud_draw(int char_id, int hp, int extinguisher_id, int *ext, int *charge){
         SetColoracaoObjeto(ext[i],BRANCO);
     }
 
-    //Escrita da "munição" na tela
+    /*
+    Escrita da "munição" na tela
+    Numero em branco caso a munição estiver acima da metade
+    Em amarelo se estiver entre 25% e 50%
+    Em vermelho nos ultimos 25%
+    */
     for(i=0;i<5;i++){
         if(charge[i] < 25){
             EscreveInteiroEsquerda(charge[i],posx[i],PIG_ALT_TELA-50,VERMELHO);
@@ -73,6 +84,7 @@ void draw_tutorial(){
     EscreverCentralizada("APERTE ENTER PARA INICIAR",PIG_LARG_TELA/2,100,VERDE);
 }
 
+//Mensagem de vitória
 void game_win(){
     EscreverCentralizada("VITORIA",PIG_LARG_TELA/2,map_height/2,VERDE);
 }
@@ -81,15 +93,58 @@ int main( int argc, char* args[] ){
 
     CriaJogo("Crazy Fire");
 
-    //Variaveis do personagem principal
+    /*
+    Variaveis do personagem principal e inimigos:
+
+    x_main_char e y_main_char           = Posição atual do personagem
+    x_enemy e y_enemy                   = Posição atual dos inimigos
+    kills                               = Contagem de quantas chamas foram apagadas (O jogador vence se apagar 10 chamas na versão atual)
+    main_char_length e main_char_height = Dimensões do personagem principal
+    hp                                  = Vida atual do personagem (O jogador perde caso chegue a 0)
+    ext_id                              = Representa o extintor selecionado atualmente
+    spawn_id                            = Em qual dos 4 locais de spawn que a chama irá aparecer
+
+    */
     int x_main_char = 0, y_main_char = 0, i = 0, x_enemy = 0, y_enemy = 0, kills = 0;
     int main_char_length = 40, main_char_height = 40, hp = 360, ext_id = 1, spawn_id = 0;
 
-    //Munição inicial para cada extintor
+    /*
+    Vetores
+
+    charge       = Munição atual de cada um dos extintores
+    enemy        = Guarda o ID de cada um dos inimigos
+    enemy_id     = Guarda o TIPO de chama que o inimigo representa
+    extinguisher = Guarda o ID de cada extintor para a HUD
+    invis_wall   = Guarda o ID de cada parede invisivel que serve para delimitar o mapa
+
+    */
     int charge[5] = {100,100,100,100,100}, enemy[10] = {0,0,0,0,0,0,0,0,0,0}, enemy_id[10] = {0,0,0,0,0,0,0,0,0,0}, extinguisher[5] = {0,0,0,0,0}, invis_wall[8] = {0,0,0,0,0,0,0,0};
 
-    //Define de quanto em quanto tempo é checado um input de movimento, a diminuição da munição, o spawn de recarga, o spawn de inimigos e o dano sofrido, respectivamente.
+    /*
+    Controladores de timers
+
+    move_check_time   = Quantos segundos para o personagem poder se movimentar
+    empty_ext_time    =    ||      ||     ||  o extintor perder 1 de "munição"
+    reload_spawn_time =    ||      ||     ||  a recarga aparecer no mapa
+    enemy_spawn_time  =    ||      ||     ||  uma chama aparecer
+    enemy_move_time   =    ||      ||     ||  uma chama poder se movimentar
+    damage_taken_time =    ||      ||     ||  o personagem poder receber dano
+
+    */
     float move_check_time = 0.002, empty_ext_time = 0.01, reload_spawn_time = 5, enemy_spawn_time = 3, enemy_move_time = 0.008, damage_taken_time = 0.025;
+
+    /*
+    Flags
+
+    draw_smoke  = Se a fumaça do extintor deve ser desenhada na tela
+    draw_reload = Se o extintor de recarga deve ser desenhado na tela
+    game_over   = Se o jogo acabou com uma derrota
+    win         = Se o jogo acabou com uma vitória
+    final_msg   = Se a mensagem final ja foi exibida
+    tutorial    = Se o tutorial ja foi exibido
+    draw_enemy  = Se e quais inimigos devem ser desenhados na tela
+
+    */
 
     bool draw_smoke = false, draw_reload = false, game_over = false, final_msg = false, tutorial = true, win = false;
     bool draw_enemy[10] = {false,false,false,false,false,false,false,false,false,false};
@@ -110,11 +165,12 @@ int main( int argc, char* args[] ){
         MoveObjeto(extinguisher[i],450+100*i,PIG_ALT_TELA-50);
     }
 
+    //Criando extintor de recarga
     int reload = CriaObjeto("..//images//extinguisher.png");
     SetDimensoesObjeto(reload,40,40);
 
     //Criando imagem do personagem para a HUD
-    int hudchar = CriaObjeto("..//images//char_front.jpg",1);
+    int hudchar = CriaObjeto("..//images//char_front.png",1);
     SetDimensoesObjeto(hudchar,50,50);
     MoveObjeto(hudchar,0,PIG_ALT_TELA-50);
 
@@ -122,6 +178,7 @@ int main( int argc, char* args[] ){
     int smoke = CriaObjeto("..//images//smoke.png");
     SetDimensoesObjeto(smoke,50,50);
 
+    //Criando cada um dos inimigos
     for(i=0;i<10;i++){
         enemy[i] = CriaObjeto("..//images//flame.png");
         SetDimensoesObjeto(enemy[i],50,50);
@@ -144,6 +201,7 @@ int main( int argc, char* args[] ){
         }
     }
 
+    //Movendo paredes de colisão para seus respectivos lugares
     MoveObjeto(invis_wall[0],0,0); //bot
     MoveObjeto(invis_wall[1],(PIG_LARG_TELA/2)+60,0); //bot2
     MoveObjeto(invis_wall[2],0,map_height-40); //top
@@ -196,7 +254,7 @@ int main( int argc, char* args[] ){
             ext_id = 5;
         }
 
-        //Checa disparo do extintor e desenha a fumaça de acordo com a direção do personagem
+        //Checa disparo do extintor e desenha a fumaça de acordo com a direção do personagem. Diminui "munição" do extintor de acordo com o timer e a variavel de controle.
         if(meuTeclado[PIG_TECLA_ENTER]){
             if(charge[ext_id-1] > 0){
                 if(GetFrameAtualObjeto(main_char)==1){
@@ -360,7 +418,7 @@ int main( int argc, char* args[] ){
         }else{
 
             //Desenha o mapa
-            DesenhaSpriteSimples("..//images//map_holder.png",0,0,0);
+            DesenhaSpriteSimples("..//images//map_holder_antigo.png",0,0,0);
 
             //Desenha HUD e retangulos para teste
             test_draw();
