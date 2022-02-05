@@ -27,13 +27,13 @@ void test_draw(){
 //Desenha todos os elementos da hud
 void hud_draw(int char_id, int hp, int extinguisher_id, int *ext, int *charge){
     int i =0;
-    int posx[5] = {490,590,690,790,890}; //Posição x de cada numero de munição dos extintores
+    int posx[4] = {540,640,740,840}; //Posição x de cada numero de munição dos extintores
 
     DesenhaObjeto(char_id); //Desenha a imagem do personagem principal na HUD
     DesenhaRetangulo(60,PIG_ALT_TELA-40,30,hp,VERMELHO); //Desenha a barra de vida do personagem na HUD
 
     //Desenha extintores na HUD
-    for(i=0;i<5;i++){
+    for(i=0;i<4;i++){
         DesenhaObjeto(ext[i]);
         SetColoracaoObjeto(ext[i],BRANCO);
     }
@@ -44,7 +44,7 @@ void hud_draw(int char_id, int hp, int extinguisher_id, int *ext, int *charge){
     Em amarelo se estiver entre 25% e 50%
     Em vermelho nos ultimos 25%
     */
-    for(i=0;i<5;i++){
+    for(i=0;i<4;i++){
         if(charge[i] < 25){
             EscreveInteiroEsquerda(charge[i],posx[i],PIG_ALT_TELA-50,VERMELHO);
         }else if(charge[i] >= 25 && charge[i] <= 50){
@@ -63,6 +63,11 @@ void gameover(){
     EscreverCentralizada("GAME OVER",PIG_LARG_TELA/2,map_height/2,VERMELHO);
 }
 
+//Mensagem de pause
+void gamepaused(){
+    EscreverCentralizada("PAUSADO",PIG_LARG_TELA/2,map_height/2,AMARELO);
+}
+
 //Inicia os timers controladores após o fim do tutorial
 void starttimers(int t1, int t2, int t3, int t4, int t5, int t6){
     ReiniciaTimer(t1);
@@ -71,6 +76,24 @@ void starttimers(int t1, int t2, int t3, int t4, int t5, int t6){
     ReiniciaTimer(t4);
     ReiniciaTimer(t5);
     ReiniciaTimer(t6);
+}
+
+//Escreve a escolha de dificuldade na tela
+void draw_nivel(int nivel_aux){
+    EscreverCentralizada("ESCOLHA A DIFICULDADE",PIG_LARG_TELA/2,PIG_ALT_TELA-100,VERMELHO);
+    EscreverCentralizada("(1) - FACIL",PIG_LARG_TELA/2,PIG_ALT_TELA-200,BRANCO);
+    EscreverCentralizada("(2) - NORMAL",PIG_LARG_TELA/2,PIG_ALT_TELA-300,BRANCO);
+    EscreverCentralizada("(3) - DIFICIL",PIG_LARG_TELA/2,PIG_ALT_TELA-400,BRANCO);
+    EscreverCentralizada("(4) - IMPOSSIVEL",PIG_LARG_TELA/2,PIG_ALT_TELA-500,BRANCO);
+    if(nivel_aux == 1){
+        EscreverCentralizada("(1) - FACIL",PIG_LARG_TELA/2,PIG_ALT_TELA-200,VERDE);
+    }else if(nivel_aux == 2){
+        EscreverCentralizada("(2) - NORMAL",PIG_LARG_TELA/2,PIG_ALT_TELA-300,VERDE);
+    }else if(nivel_aux == 3){
+        EscreverCentralizada("(3) - DIFICIL",PIG_LARG_TELA/2,PIG_ALT_TELA-400,VERDE);
+    }else if(nivel_aux == 4){
+        EscreverCentralizada("(4) - IMPOSSIVEL",PIG_LARG_TELA/2,PIG_ALT_TELA-500,VERDE);
+    }
 }
 
 //Escreve o tutorial na tela
@@ -98,15 +121,18 @@ int main( int argc, char* args[] ){
 
     x_main_char e y_main_char           = Posição atual do personagem
     x_enemy e y_enemy                   = Posição atual dos inimigos
-    kills                               = Contagem de quantas chamas foram apagadas (O jogador vence se apagar 10 chamas na versão atual)
+    kills                               = Contagem de quantas chamas foram apagadas
+    kills_to_win                        = Quantas chamas precisam ser apagadas para o jogador vencer
     main_char_length e main_char_height = Dimensões do personagem principal
     hp                                  = Vida atual do personagem (O jogador perde caso chegue a 0)
     ext_id                              = Representa o extintor selecionado atualmente
     spawn_id                            = Em qual dos 4 locais de spawn que a chama irá aparecer
+    nivel                               = Qual é a dificuldade do jogo
+    nivel_aux                           = Auxiliar a escolha da dificuldade
 
     */
-    int x_main_char = 0, y_main_char = 0, i = 0, x_enemy = 0, y_enemy = 0, kills = 0;
-    int main_char_length = 40, main_char_height = 40, hp = 360, ext_id = 1, spawn_id = 0;
+    int x_main_char = 0, y_main_char = 0, i = 0, x_enemy = 0, y_enemy = 0, kills = 0, kills_to_win = 10;
+    int main_char_length = 40, main_char_height = 40, hp = 400, ext_id = 1, spawn_id = 0, nivel = 0, nivel_aux = 1;
 
     /*
     Vetores
@@ -118,7 +144,7 @@ int main( int argc, char* args[] ){
     invis_wall   = Guarda o ID de cada parede invisivel que serve para delimitar o mapa
 
     */
-    int charge[5] = {100,100,100,100,100}, enemy[10] = {0,0,0,0,0,0,0,0,0,0}, enemy_id[10] = {0,0,0,0,0,0,0,0,0,0}, extinguisher[5] = {0,0,0,0,0}, invis_wall[8] = {0,0,0,0,0,0,0,0};
+    int charge[4] = {100,100,100,100}, enemy[10] = {0,0,0,0,0,0,0,0,0,0}, enemy_id[10] = {0,0,0,0,0,0,0,0,0,0}, extinguisher[4] = {0,0,0,0}, invis_wall[8] = {0,0,0,0,0,0,0,0};
 
     /*
     Controladores de timers
@@ -131,7 +157,7 @@ int main( int argc, char* args[] ){
     damage_taken_time =    ||      ||     ||  o personagem poder receber dano
 
     */
-    float move_check_time = 0.002, empty_ext_time = 0.01, reload_spawn_time = 5, enemy_spawn_time = 3, enemy_move_time = 0.008, damage_taken_time = 0.025;
+    float move_check_time = 0.003, empty_ext_time = 0.01, reload_spawn_time = 5, enemy_spawn_time = 3, enemy_move_time = 0.008, damage_taken_time = 0.025;
 
     /*
     Flags
@@ -143,10 +169,11 @@ int main( int argc, char* args[] ){
     final_msg   = Se a mensagem final ja foi exibida
     tutorial    = Se o tutorial ja foi exibido
     draw_enemy  = Se e quais inimigos devem ser desenhados na tela
-
+    paused      = Se o jogo está pausado ou não
+    level       = Se a tela de nivel precisa ser desenhada
     */
 
-    bool draw_smoke = false, draw_reload = false, game_over = false, final_msg = false, tutorial = true, win = false;
+    bool draw_smoke = false, draw_reload = false, game_over = false, final_msg = false, tutorial = false, win = false, paused = false, level = true, set_var = false;
     bool draw_enemy[10] = {false,false,false,false,false,false,false,false,false,false};
 
     meuTeclado = GetTeclado();
@@ -159,14 +186,18 @@ int main( int argc, char* args[] ){
     int timer_damage = CriaTimer(1);     //Para checar dano sofrido
 
     //Criando imagens dos extintores para a HUD
-    for(i=0;i<5;i++){
-        extinguisher[i] = CriaObjeto("..//images//extinguisher.png");
+    extinguisher[0] = CriaObjeto("..//images//extinguisher1.png");
+    extinguisher[1] = CriaObjeto("..//images//extinguisher2.png");
+    extinguisher[2] = CriaObjeto("..//images//extinguisher3.png");
+    extinguisher[3] = CriaObjeto("..//images//extinguisher4.png");
+    for(i=0;i<4;i++){
+        //extinguisher[i] = CriaObjeto("..//images//extinguisher.png");
         SetDimensoesObjeto(extinguisher[i],50,50);
-        MoveObjeto(extinguisher[i],450+100*i,PIG_ALT_TELA-50);
+        MoveObjeto(extinguisher[i],500+100*i,PIG_ALT_TELA-50);
     }
 
     //Criando extintor de recarga
-    int reload = CriaObjeto("..//images//extinguisher.png");
+    int reload = CriaObjeto("..//images//extinguisher0.png");
     SetDimensoesObjeto(reload,40,40);
 
     //Criando imagem do personagem para a HUD
@@ -180,7 +211,17 @@ int main( int argc, char* args[] ){
 
     //Criando cada um dos inimigos
     for(i=0;i<10;i++){
-        enemy[i] = CriaObjeto("..//images//flame.png");
+        enemy_id[i] = rand()%4;
+        if(enemy_id[i] == 0){
+            enemy[i] = CriaObjeto("..//images//flameA.png");
+        }else if(enemy_id[i] == 1){
+            enemy[i] = CriaObjeto("..//images//flameB.png");
+        }else if(enemy_id[i] == 2){
+            enemy[i] = CriaObjeto("..//images//flameC.png");
+        }else if(enemy_id[i] == 3){
+            enemy[i] = CriaObjeto("..//images//flameD.png");
+        }
+        //enemy[i] = CriaObjeto("..//images//flame.png");
         SetDimensoesObjeto(enemy[i],50,50);
     }
 
@@ -211,6 +252,35 @@ int main( int argc, char* args[] ){
     MoveObjeto(invis_wall[6],PIG_LARG_TELA-40,(map_height/2)+60); //right2
 
     while(JogoRodando()){
+
+        if(set_var){
+            if(nivel == 1){
+                hp = 400;
+                //kills_to_win = 10;
+                empty_ext_time = 0.01;
+                enemy_move_time = 0.008;
+                damage_taken_time = 0.025;
+            }else if(nivel == 2){
+                hp = 350;
+                //kills_to_win = 15;
+                empty_ext_time = 0.009;
+                enemy_move_time = 0.007;
+                damage_taken_time = 0.023;
+            }else if(nivel == 3){
+                hp = 300;
+                //kills_to_win = 20;
+                empty_ext_time = 0.008;
+                enemy_move_time = 0.006;
+                damage_taken_time = 0.021;
+            }else if(nivel == 4){
+                hp = 250;
+                //kills_to_win = 25;
+                empty_ext_time = 0.007;
+                enemy_move_time = 0.005;
+                damage_taken_time = 0.019;
+            }
+            set_var = false;
+        }
 
         evento = GetEvento();
 
@@ -250,9 +320,9 @@ int main( int argc, char* args[] ){
         if(meuTeclado[PIG_TECLA_4]){
             ext_id = 4;
         }
-        if(meuTeclado[PIG_TECLA_5]){
-            ext_id = 5;
-        }
+        //if(meuTeclado[PIG_TECLA_5]){
+           // ext_id = 5;
+        //}
 
         //Checa disparo do extintor e desenha a fumaça de acordo com a direção do personagem. Diminui "munição" do extintor de acordo com o timer e a variavel de controle.
         if(meuTeclado[PIG_TECLA_ENTER]){
@@ -291,7 +361,7 @@ int main( int argc, char* args[] ){
 
         //Pegar recarga de extintor no mapa
         if(TestaColisaoObjetos(main_char,reload) && draw_reload){
-            for(i=0;i<5;i++){
+            for(i=0;i<4;i++){
                 if(charge[i]>=75){
                     charge[i] = 100;
                 }else{
@@ -308,7 +378,7 @@ int main( int argc, char* args[] ){
 
             for(i=0;i<10;i++){
                 if(!draw_enemy[i]){
-                    enemy_id[i] = rand()%4;
+                    //enemy_id[i] = rand()%4;
                     if(spawn_id == 0){
                         MoveObjeto(enemy[i],(PIG_LARG_TELA/2),map_height-30);
                     }else if(spawn_id == 1){
@@ -386,18 +456,12 @@ int main( int argc, char* args[] ){
                         //DestroiObjeto(enemy[i]);
                         kills++;
                     }
-                    if(ext_id == 5){
-                        draw_enemy[i] = false;
-                        MoveObjeto(enemy[i],0,PIG_ALT_TELA);
-                        //DestroiObjeto(enemy[i]);
-                        kills++;
-                    }
                 }
             }
         }
 
         //Condição de vitória
-        if(kills >= 10){
+        if(kills >= kills_to_win){
             win = true;
         }
 
@@ -406,22 +470,57 @@ int main( int argc, char* args[] ){
             game_over = true;
         }
 
+        //Responsável pelo pause e unpause do jogo (Crashando no unpause)
+        while(paused){
+            if(meuTeclado[PIG_TECLA_u]){
+                paused = false;
+                DespausaTudo();
+                break;
+            }
+        }
+        if(meuTeclado[PIG_TECLA_p]){
+            paused = true;
+            PausaTudo();
+        }
+
+
         IniciaDesenho();
 
-        //Começa mostrando o tutorial na tela
+        //Começa mostrando a escolha de nível na tela
+        if(level){
+            draw_nivel(nivel_aux);
+            if(meuTeclado[PIG_TECLA_1]){
+                nivel_aux = 1;
+            }else if(meuTeclado[PIG_TECLA_2]){
+                nivel_aux = 2;
+            }else if(meuTeclado[PIG_TECLA_3]){
+                nivel_aux = 3;
+            }else if(meuTeclado[PIG_TECLA_4]){
+                nivel_aux = 4;
+            }
+            if(meuTeclado[PIG_TECLA_ENTER]){
+                nivel = nivel_aux;
+                set_var = true;
+                level = false;
+                tutorial = true;
+            }
+        }
+        //Mostra o tutorial na tela
         if(tutorial){
             draw_tutorial();
             if(meuTeclado[PIG_TECLA_ENTER]){
                 tutorial = false;
                 starttimers(timer,timershot,timer_damage,timer_enemy,timer_enemy_move,timer_reload);
             }
-        }else{
+        }
+
+        if(!tutorial && !level){
 
             //Desenha o mapa
-            DesenhaSpriteSimples("..//images//map_holder_antigo.png",0,0,0);
+            DesenhaSpriteSimples("..//images//map_holder.png",0,0,0);
 
             //Desenha HUD e retangulos para teste
-            test_draw();
+            //test_draw();
             hud_draw(hudchar,hp,ext_id,extinguisher,charge);
 
             //Desenha personagem principal
@@ -441,13 +540,17 @@ int main( int argc, char* args[] ){
                 if(draw_enemy[i]){
                     DesenhaObjeto(enemy[i]);
                     GetXYObjeto(enemy[i],&x_enemy,&y_enemy);
-                    switch(enemy_id[i]){
+                    /*switch(enemy_id[i]){
                         case 0: EscreverCentralizada("A",x_enemy+25,y_enemy);break;
                         case 1: EscreverCentralizada("B",x_enemy+25,y_enemy);break;
                         case 2: EscreverCentralizada("C",x_enemy+25,y_enemy);break;
                         case 3: EscreverCentralizada("D",x_enemy+25,y_enemy);break;
-                    }
+                    }*/
                 }
+            }
+
+            if(paused){
+                gamepaused();
             }
 
             if(final_msg){
