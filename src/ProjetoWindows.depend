@@ -1,6 +1,8 @@
 # depslib dependency file v1.0
-1644080748 source:c:\users\renan\desktop\cf\jogo-crazy-fire\src\main.cpp
+1644098413 source:c:\users\renan\desktop\cf\jogo-crazy-fire\src\main.cpp
 	"PIG.h"
+	<cstdlib>
+	<ctime>
 
 1638653155 c:\users\renan\desktop\cf\jogo-crazy-fire\include\pig.h
 	"SDL.h"

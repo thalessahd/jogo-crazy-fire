@@ -1,4 +1,6 @@
 #include "PIG.h"
+#include <cstdlib>
+#include <ctime>
 
 PIG_Evento evento;          //evento ser tratado a cada passada do loop principal
 PIG_Teclado meuTeclado;     //variável como mapeamento do teclado
@@ -22,6 +24,19 @@ void test_draw(){
     DesenhaRetangulo(0,(map_height/2)-60,120,40,VERDE);
     DesenhaRetangulo((PIG_LARG_TELA/2)-60,map_height-40,40,120,VERDE);
     DesenhaRetangulo(PIG_LARG_TELA-40,(map_height/2)-60,120,40,VERDE);
+}
+
+//Desenha a tela inicial do jogo
+void draw_inicial(int aux){
+
+    DesenhaSpriteSimples("..//images//tela_inicial.png",0,0,0);
+    EscreverCentralizada("(1) - NOVO JOGO",PIG_LARG_TELA/2,PIG_ALT_TELA-650,BRANCO);
+    EscreverCentralizada("(2) - SAIR",PIG_LARG_TELA/2,PIG_ALT_TELA-700,BRANCO);
+    if(aux == 1){
+        EscreverCentralizada("(1) - NOVO JOGO",PIG_LARG_TELA/2,PIG_ALT_TELA-650,VERDE);
+    }else{
+        EscreverCentralizada("(2) - SAIR",PIG_LARG_TELA/2,PIG_ALT_TELA-700,VERDE);
+    }
 }
 
 //Desenha todos os elementos da hud
@@ -98,13 +113,14 @@ void draw_nivel(int nivel_aux){
 
 //Escreve o tutorial na tela
 void draw_tutorial(){
-    EscreverCentralizada("TUTORIAL",PIG_LARG_TELA/2,PIG_ALT_TELA-100,VERMELHO);
+    /*EscreverCentralizada("TUTORIAL",PIG_LARG_TELA/2,PIG_ALT_TELA-100,VERMELHO);
     EscreverEsquerda("(1) - Extintor de Espuma -> Classes A e B",50,600,BRANCO);
     EscreverEsquerda("(2) - Extintor de Dioxido de Carbono -> Classes B e C",50,500,BRANCO);
     EscreverEsquerda("(3) - Extintor Quimico -> Classes B, C e D",50,400,BRANCO);
     EscreverEsquerda("(4) - Extintor de Agua -> Classe A",50,300,BRANCO);
     EscreverEsquerda("(5) - Extintor Especial -> Todas as Classes",50,200,BRANCO);
-    EscreverCentralizada("APERTE ENTER PARA INICIAR",PIG_LARG_TELA/2,100,VERDE);
+    EscreverCentralizada("APERTE ENTER PARA INICIAR",PIG_LARG_TELA/2,100,VERDE);*/
+    DesenhaSpriteSimples("..//images//tutorial.png",0,0,0);
 }
 
 //Mensagem de vitória
@@ -115,6 +131,8 @@ void game_win(){
 int main( int argc, char* args[] ){
 
     CriaJogo("Crazy Fire");
+
+    srand((unsigned int)time(NULL));
 
     /*
     Variaveis do personagem principal e inimigos:
@@ -129,10 +147,11 @@ int main( int argc, char* args[] ){
     spawn_id                            = Em qual dos 4 locais de spawn que a chama irá aparecer
     nivel                               = Qual é a dificuldade do jogo
     nivel_aux                           = Auxiliar a escolha da dificuldade
+    inicial_aux                         = Auxiliar a escolha do menu inicial
 
     */
     int x_main_char = 0, y_main_char = 0, i = 0, x_enemy = 0, y_enemy = 0, kills = 0, kills_to_win = 10;
-    int main_char_length = 40, main_char_height = 40, hp = 400, ext_id = 1, spawn_id = 0, nivel = 0, nivel_aux = 1;
+    int main_char_length = 40, main_char_height = 40, hp = 400, ext_id = 1, spawn_id = 0, nivel = 0, nivel_aux = 1, inicial_aux = 1;
 
     /*
     Vetores
@@ -171,9 +190,12 @@ int main( int argc, char* args[] ){
     draw_enemy  = Se e quais inimigos devem ser desenhados na tela
     paused      = Se o jogo está pausado ou não
     level       = Se a tela de nivel precisa ser desenhada
+    set_var     = Setar variaveis de acordo com a dificuldade escolhida
+    inicial     = Se a tela inicial deve ser exibida
+
     */
 
-    bool draw_smoke = false, draw_reload = false, game_over = false, final_msg = false, tutorial = false, win = false, paused = false, level = true, set_var = false;
+    bool draw_smoke = false, draw_reload = false, game_over = false, final_msg = false, tutorial = false, win = false, paused = false, level = false, set_var = false, inicial = true;
     bool draw_enemy[10] = {false,false,false,false,false,false,false,false,false,false};
 
     meuTeclado = GetTeclado();
@@ -209,22 +231,6 @@ int main( int argc, char* args[] ){
     int smoke = CriaObjeto("..//images//smoke.png");
     SetDimensoesObjeto(smoke,50,50);
 
-    //Criando cada um dos inimigos
-    for(i=0;i<10;i++){
-        enemy_id[i] = rand()%4;
-        if(enemy_id[i] == 0){
-            enemy[i] = CriaObjeto("..//images//flameA.png");
-        }else if(enemy_id[i] == 1){
-            enemy[i] = CriaObjeto("..//images//flameB.png");
-        }else if(enemy_id[i] == 2){
-            enemy[i] = CriaObjeto("..//images//flameC.png");
-        }else if(enemy_id[i] == 3){
-            enemy[i] = CriaObjeto("..//images//flameD.png");
-        }
-        //enemy[i] = CriaObjeto("..//images//flame.png");
-        SetDimensoesObjeto(enemy[i],50,50);
-    }
-
     //Gerando o sprite do personagem principal e aplicando suas dimensões
     int main_char = CriaObjeto("..//images//main_char.png",1);
     CarregaArquivoFramesObjeto(main_char,"..//frames//main_char.txt");
@@ -252,6 +258,31 @@ int main( int argc, char* args[] ){
     MoveObjeto(invis_wall[6],PIG_LARG_TELA-40,(map_height/2)+60); //right2
 
     while(JogoRodando()){
+
+        evento = GetEvento();
+
+        GetXYObjeto(main_char,&x_main_char,&y_main_char); //Variaveis que guardam a posição atual do personagem principal
+
+        //Checa por um input de teclado a cada X segundos e não movimenta o personagem caso ele se encontre em colisão com o mapa | muda o sprite do personagem de acordo com a direção do movimento
+        if(TempoDecorrido(timer) > move_check_time){
+            if(y_main_char < map_height-40 && (meuTeclado[PIG_TECLA_CIMA] || meuTeclado[PIG_TECLA_w]) && (!TestaColisaoObjetos(main_char,invis_wall[2]) && !TestaColisaoObjetos(main_char,invis_wall[3]) && (!TestaColisaoObjetos(main_char,invis_wall[4]) || x_main_char >=39) && (!TestaColisaoObjetos(main_char,invis_wall[6]) || x_main_char <=PIG_LARG_TELA-79))){
+                DeslocaObjeto(main_char,0,+1);
+                MudaFrameObjeto(main_char,2);
+            }
+            if(y_main_char > 0 && (meuTeclado[PIG_TECLA_BAIXO] || meuTeclado[PIG_TECLA_s]) && (!TestaColisaoObjetos(main_char,invis_wall[0]) && !TestaColisaoObjetos(main_char,invis_wall[1]) && (!TestaColisaoObjetos(main_char,invis_wall[7]) || x_main_char >=39) && (!TestaColisaoObjetos(main_char,invis_wall[5]) || x_main_char <=PIG_LARG_TELA-79))){
+                DeslocaObjeto(main_char,0,-1);
+                MudaFrameObjeto(main_char,1);
+            }
+            if(x_main_char > 0 && (meuTeclado[PIG_TECLA_ESQUERDA] || meuTeclado[PIG_TECLA_a]) && (!TestaColisaoObjetos(main_char,invis_wall[7]) && !TestaColisaoObjetos(main_char,invis_wall[4]) && (!TestaColisaoObjetos(main_char,invis_wall[0]) || y_main_char >=39) && (!TestaColisaoObjetos(main_char,invis_wall[2]) || y_main_char <= map_height-79))){
+                DeslocaObjeto(main_char,-1,0);
+                MudaFrameObjeto(main_char,4);
+            }
+            if(x_main_char < PIG_LARG_TELA-40 && (meuTeclado[PIG_TECLA_DIREITA] || meuTeclado[PIG_TECLA_d]) && (!TestaColisaoObjetos(main_char,invis_wall[5]) && !TestaColisaoObjetos(main_char,invis_wall[6]) && (!TestaColisaoObjetos(main_char,invis_wall[1]) || y_main_char >=39) && (!TestaColisaoObjetos(main_char,invis_wall[3]) || y_main_char <= map_height-79))){
+                DeslocaObjeto(main_char,+1,0);
+                MudaFrameObjeto(main_char,3);
+            }
+            ReiniciaTimer(timer);
+        }
 
         if(set_var){
             if(nivel == 1){
@@ -282,30 +313,6 @@ int main( int argc, char* args[] ){
             set_var = false;
         }
 
-        evento = GetEvento();
-
-        GetXYObjeto(main_char,&x_main_char,&y_main_char); //Variaveis que guardam a posição atual do personagem principal
-
-        //Checa por um input de teclado a cada X segundos e não movimenta o personagem caso ele se encontre em colisão com o mapa | muda o sprite do personagem de acordo com a direção do movimento
-        if(TempoDecorrido(timer) > move_check_time){
-            if(y_main_char < map_height-40 && (meuTeclado[PIG_TECLA_CIMA] || meuTeclado[PIG_TECLA_w]) && (!TestaColisaoObjetos(main_char,invis_wall[2]) && !TestaColisaoObjetos(main_char,invis_wall[3]) && (!TestaColisaoObjetos(main_char,invis_wall[4]) || x_main_char >=39) && (!TestaColisaoObjetos(main_char,invis_wall[6]) || x_main_char <=PIG_LARG_TELA-79))){
-                DeslocaObjeto(main_char,0,+1);
-                MudaFrameObjeto(main_char,2);
-            }
-            if(y_main_char > 0 && (meuTeclado[PIG_TECLA_BAIXO] || meuTeclado[PIG_TECLA_s]) && (!TestaColisaoObjetos(main_char,invis_wall[0]) && !TestaColisaoObjetos(main_char,invis_wall[1]) && (!TestaColisaoObjetos(main_char,invis_wall[7]) || x_main_char >=39) && (!TestaColisaoObjetos(main_char,invis_wall[5]) || x_main_char <=PIG_LARG_TELA-79))){
-                DeslocaObjeto(main_char,0,-1);
-                MudaFrameObjeto(main_char,1);
-            }
-            if(x_main_char > 0 && (meuTeclado[PIG_TECLA_ESQUERDA] || meuTeclado[PIG_TECLA_a]) && (!TestaColisaoObjetos(main_char,invis_wall[7]) && !TestaColisaoObjetos(main_char,invis_wall[4]) && (!TestaColisaoObjetos(main_char,invis_wall[0]) || y_main_char >=39) && (!TestaColisaoObjetos(main_char,invis_wall[2]) || y_main_char <= map_height-79))){
-                DeslocaObjeto(main_char,-1,0);
-                MudaFrameObjeto(main_char,4);
-            }
-            if(x_main_char < PIG_LARG_TELA-40 && (meuTeclado[PIG_TECLA_DIREITA] || meuTeclado[PIG_TECLA_d]) && (!TestaColisaoObjetos(main_char,invis_wall[5]) && !TestaColisaoObjetos(main_char,invis_wall[6]) && (!TestaColisaoObjetos(main_char,invis_wall[1]) || y_main_char >=39) && (!TestaColisaoObjetos(main_char,invis_wall[3]) || y_main_char <= map_height-79))){
-                DeslocaObjeto(main_char,+1,0);
-                MudaFrameObjeto(main_char,3);
-            }
-            ReiniciaTimer(timer);
-        }
 
         //Checa seleção de extintor
         if(meuTeclado[PIG_TECLA_1]){
@@ -372,13 +379,23 @@ int main( int argc, char* args[] ){
             ReiniciaTimer(timer_reload);
         }
 
-        //Spawn de inimigos
+        //Criação e spawn de inimigos
         if(TempoDecorrido(timer_enemy) > enemy_spawn_time){
             spawn_id = rand()%4;
 
             for(i=0;i<10;i++){
                 if(!draw_enemy[i]){
-                    //enemy_id[i] = rand()%4;
+                    enemy_id[i] = rand()%4;
+                    if(enemy_id[i] == 0){
+                        enemy[i] = CriaObjeto("..//images//flameA.png");
+                    }else if(enemy_id[i] == 1){
+                        enemy[i] = CriaObjeto("..//images//flameB.png");
+                    }else if(enemy_id[i] == 2){
+                        enemy[i] = CriaObjeto("..//images//flameC.png");
+                    }else if(enemy_id[i] == 3){
+                        enemy[i] = CriaObjeto("..//images//flameD.png");
+                    }
+                    SetDimensoesObjeto(enemy[i],50,50);
                     if(spawn_id == 0){
                         MoveObjeto(enemy[i],(PIG_LARG_TELA/2),map_height-30);
                     }else if(spawn_id == 1){
@@ -486,7 +503,16 @@ int main( int argc, char* args[] ){
 
         IniciaDesenho();
 
-        //Começa mostrando a escolha de nível na tela
+        //Desenha o tutorial na tela
+        if(tutorial){
+            draw_tutorial();
+            if(meuTeclado[PIG_TECLA_ENTER]){
+                tutorial = false;
+                starttimers(timer,timershot,timer_damage,timer_enemy,timer_enemy_move,timer_reload);
+            }
+        }
+
+        //Desenha a tela de escolha da dificuldade
         if(level){
             draw_nivel(nivel_aux);
             if(meuTeclado[PIG_TECLA_1]){
@@ -505,16 +531,26 @@ int main( int argc, char* args[] ){
                 tutorial = true;
             }
         }
-        //Mostra o tutorial na tela
-        if(tutorial){
-            draw_tutorial();
+
+        //Desenha a tela inicial do jogo
+        if(inicial){
+            draw_inicial(inicial_aux);
+            if(meuTeclado[PIG_TECLA_1]){
+                inicial_aux = 1;
+            }else if(meuTeclado[PIG_TECLA_2]){
+                inicial_aux = 2;
+            }
             if(meuTeclado[PIG_TECLA_ENTER]){
-                tutorial = false;
-                starttimers(timer,timershot,timer_damage,timer_enemy,timer_enemy_move,timer_reload);
+                if(inicial_aux == 1){
+                    inicial = false;
+                    level = true;
+                }else{
+                    return 0;
+                }
             }
         }
 
-        if(!tutorial && !level){
+        if(!tutorial && !level && !inicial){
 
             //Desenha o mapa
             DesenhaSpriteSimples("..//images//map_holder.png",0,0,0);
