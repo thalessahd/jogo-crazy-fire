@@ -39,6 +39,27 @@ void draw_inicial(int aux){
     }
 }
 
+//Desenha as telas de dialogo
+void draw_dialogo(int stage){
+    if(stage == 1){
+        DesenhaSpriteSimples("..//images//intro1.png",0,0,0);
+    }else if(stage == 2){
+        DesenhaSpriteSimples("..//images//intro2.png",0,0,0);
+    }else if(stage == 3){
+        DesenhaSpriteSimples("..//images//intro3.png",0,0,0);
+    }else if(stage == 4){
+        DesenhaSpriteSimples("..//images//intro4.png",0,0,0);
+    }else if(stage == 5){
+        DesenhaSpriteSimples("..//images//intro5.png",0,0,0);
+    }else if(stage == 6){
+        DesenhaSpriteSimples("..//images//intro6.png",0,0,0);
+    }else if(stage == 7){
+        DesenhaSpriteSimples("..//images//intro7.png",0,0,0);
+    }else if(stage == 8){
+        DesenhaSpriteSimples("..//images//intro8.png",0,0,0);
+    }
+}
+
 //Desenha todos os elementos da hud
 void hud_draw(int char_id, int hp, int extinguisher_id, int *ext, int *charge){
     int i =0;
@@ -84,13 +105,15 @@ void gamepaused(){
 }
 
 //Inicia os timers controladores após o fim do tutorial
-void starttimers(int t1, int t2, int t3, int t4, int t5, int t6){
+void starttimers(int t1, int t2, int t3, int t4, int t5, int t6, int t7, int t8){
     ReiniciaTimer(t1);
     ReiniciaTimer(t2);
     ReiniciaTimer(t3);
     ReiniciaTimer(t4);
     ReiniciaTimer(t5);
     ReiniciaTimer(t6);
+    ReiniciaTimer(t7);
+    ReiniciaTimer(t8);
 }
 
 //Escreve a escolha de dificuldade na tela
@@ -148,9 +171,13 @@ int main( int argc, char* args[] ){
     nivel                               = Qual é a dificuldade do jogo
     nivel_aux                           = Auxiliar a escolha da dificuldade
     inicial_aux                         = Auxiliar a escolha do menu inicial
+    dialogo_stage                       = Qual parte do dialogo será mostrada
+    max_hp                              = Maximo de vida que o personagem pode ter
+    heal                                = Quanto que um coração cura o personagem
 
     */
-    int x_main_char = 0, y_main_char = 0, i = 0, x_enemy = 0, y_enemy = 0, kills = 0, kills_to_win = 10;
+
+    int x_main_char = 0, y_main_char = 0, i = 0, x_enemy = 0, y_enemy = 0, kills = 0, kills_to_win = 10, dialogo_stage = 1, max_hp = 400, heal = 50;
     int main_char_length = 40, main_char_height = 40, hp = 400, ext_id = 1, spawn_id = 0, nivel = 0, nivel_aux = 1, inicial_aux = 1;
 
     /*
@@ -163,6 +190,7 @@ int main( int argc, char* args[] ){
     invis_wall   = Guarda o ID de cada parede invisivel que serve para delimitar o mapa
 
     */
+
     int charge[4] = {100,100,100,100}, enemy[10] = {0,0,0,0,0,0,0,0,0,0}, enemy_id[10] = {0,0,0,0,0,0,0,0,0,0}, extinguisher[4] = {0,0,0,0}, invis_wall[8] = {0,0,0,0,0,0,0,0};
 
     /*
@@ -174,9 +202,12 @@ int main( int argc, char* args[] ){
     enemy_spawn_time  =    ||      ||     ||  uma chama aparecer
     enemy_move_time   =    ||      ||     ||  uma chama poder se movimentar
     damage_taken_time =    ||      ||     ||  o personagem poder receber dano
+    hp_spawn_time     =    ||      ||     ||  o coração de hp aparecer
+    speed_spawn_time  =    ||      ||     ||  a bota de velocidade aparecer
 
     */
-    float move_check_time = 0.003, empty_ext_time = 0.01, reload_spawn_time = 5, enemy_spawn_time = 3, enemy_move_time = 0.008, damage_taken_time = 0.025;
+
+    float move_check_time = 0.004, empty_ext_time = 0.01, reload_spawn_time = 5, enemy_spawn_time = 3, enemy_move_time = 0.008, damage_taken_time = 0.025, hp_spawn_time = 7, speed_spawn_time = 9;
 
     /*
     Flags
@@ -192,20 +223,24 @@ int main( int argc, char* args[] ){
     level       = Se a tela de nivel precisa ser desenhada
     set_var     = Setar variaveis de acordo com a dificuldade escolhida
     inicial     = Se a tela inicial deve ser exibida
+    draw_heart  = Se o coração de hp deve ser desenhado na tela
+    draw_speed  = Se a bota de velocidade deve ser desenhada na tela
 
     */
 
-    bool draw_smoke = false, draw_reload = false, game_over = false, final_msg = false, tutorial = false, win = false, paused = false, level = false, set_var = false, inicial = true;
-    bool draw_enemy[10] = {false,false,false,false,false,false,false,false,false,false};
+    bool draw_smoke = false, draw_reload = false, game_over = false, final_msg = false, tutorial = false, win = false, paused = false, level = false, set_var = false, inicial = true, dialogo = false;
+    bool draw_enemy[10] = {false,false,false,false,false,false,false,false,false,false}, draw_speed = false, draw_heart = false;
 
     meuTeclado = GetTeclado();
 
-    int timer = CriaTimer(1);            //Para checar movimento
-    int timershot = CriaTimer(1);        //Para checar disparo do extintor
-    int timer_reload = CriaTimer(1);     //Para checar spawn do extintor de recarga
-    int timer_enemy = CriaTimer(1);      //Para checar spawn dos inimigos
-    int timer_enemy_move = CriaTimer(1); //Para checar movimento do inimigo
-    int timer_damage = CriaTimer(1);     //Para checar dano sofrido
+    int timer               = CriaTimer(1); //Para checar movimento
+    int timershot           = CriaTimer(1); //Para checar disparo do extintor
+    int timer_reload        = CriaTimer(1); //Para checar spawn do extintor de recarga
+    int timer_enemy         = CriaTimer(1); //Para checar spawn dos inimigos
+    int timer_enemy_move    = CriaTimer(1); //Para checar movimento do inimigo
+    int timer_damage        = CriaTimer(1); //Para checar dano sofrido
+    int timer_hp            = CriaTimer(1); //Para checar spawn de vida
+    int timer_speed         = CriaTimer(1); //Para checar spawn de velocidade
 
     //Criando imagens dos extintores para a HUD
     extinguisher[0] = CriaObjeto("..//images//extinguisher1.png");
@@ -217,6 +252,14 @@ int main( int argc, char* args[] ){
         SetDimensoesObjeto(extinguisher[i],50,50);
         MoveObjeto(extinguisher[i],500+100*i,PIG_ALT_TELA-50);
     }
+
+    //Criando power-up de velocidade
+    int speed = CriaObjeto("..//images//poderBota.png");
+    SetDimensoesObjeto(speed,40,40);
+
+    //Criando coração de hp
+    int heart = CriaObjeto("..//images//heart.png");
+    SetDimensoesObjeto(heart,40,40);
 
     //Criando extintor de recarga
     int reload = CriaObjeto("..//images//extinguisher0.png");
@@ -284,6 +327,7 @@ int main( int argc, char* args[] ){
             ReiniciaTimer(timer);
         }
 
+        //Setando variáveis de acordo com a dificuldade escolhida
         if(set_var){
             if(nivel == 1){
                 hp = 400;
@@ -354,11 +398,25 @@ int main( int argc, char* args[] ){
             MoveObjeto(smoke,0,PIG_ALT_TELA);
         }
 
-        //Spawna extintor de recarga
+        //Spawn do extintor de recarga no mapa
         if(TempoDecorrido(timer_reload) > reload_spawn_time){
             MoveObjeto(reload,rand()%800+50,rand()%600+50);
             draw_reload = true;
             ReiniciaTimer(timer_reload);
+        }
+
+        //Spawn do coração de cura no mapa
+        if(TempoDecorrido(timer_hp) > hp_spawn_time){
+            MoveObjeto(heart,rand()%800+50,rand()%600+50);
+            draw_heart = true;
+            ReiniciaTimer(timer_hp);
+        }
+
+        //Spawn da bota de velocidade no mapa
+        if(TempoDecorrido(timer_speed) > speed_spawn_time){
+            MoveObjeto(speed,rand()%800+50,rand()%600+50);
+            draw_speed = true;
+            ReiniciaTimer(timer_speed);
         }
 
         //Fecha o jogo apertando ESC
@@ -377,6 +435,24 @@ int main( int argc, char* args[] ){
             }
             draw_reload = false;
             ReiniciaTimer(timer_reload);
+        }
+
+        //Pegar coração de cura no mapa
+        if(TestaColisaoObjetos(main_char,heart) && draw_heart){
+            hp = hp + heal;
+            if(hp > max_hp){
+                hp = max_hp;
+            }
+            draw_heart = false;
+            ReiniciaTimer(timer_hp);
+        }
+
+        //Pegar bota de velocidade no mapa
+        if(TestaColisaoObjetos(main_char,speed) && draw_speed){
+            move_check_time = 0.002;
+            draw_speed = false;
+            ReiniciaTimer(timer_speed);
+            PausaTimer(timer_speed);
         }
 
         //Criação e spawn de inimigos
@@ -506,9 +582,21 @@ int main( int argc, char* args[] ){
         //Desenha o tutorial na tela
         if(tutorial){
             draw_tutorial();
-            if(meuTeclado[PIG_TECLA_ENTER]){
+            if(evento.tipoEvento == PIG_EVENTO_TECLADO && evento.teclado.acao == PIG_TECLA_LIBERADA && evento.teclado.tecla == PIG_TECLA_ENTER){
                 tutorial = false;
-                starttimers(timer,timershot,timer_damage,timer_enemy,timer_enemy_move,timer_reload);
+                starttimers(timer,timershot,timer_damage,timer_enemy,timer_enemy_move,timer_reload,timer_hp,timer_speed);
+            }
+        }
+
+        //Desenha as telas de dialogo
+        if(dialogo){
+            draw_dialogo(dialogo_stage);
+            if(evento.tipoEvento == PIG_EVENTO_TECLADO && evento.teclado.acao == PIG_TECLA_LIBERADA && evento.teclado.tecla == PIG_TECLA_ENTER){
+                dialogo_stage++;
+                if(dialogo_stage >= 8){
+                    tutorial = true;
+                    dialogo = false;
+                }
             }
         }
 
@@ -524,11 +612,11 @@ int main( int argc, char* args[] ){
             }else if(meuTeclado[PIG_TECLA_4]){
                 nivel_aux = 4;
             }
-            if(meuTeclado[PIG_TECLA_ENTER]){
+            if(evento.tipoEvento == PIG_EVENTO_TECLADO && evento.teclado.acao == PIG_TECLA_LIBERADA && evento.teclado.tecla == PIG_TECLA_ENTER){
                 nivel = nivel_aux;
                 set_var = true;
                 level = false;
-                tutorial = true;
+                dialogo = true;
             }
         }
 
@@ -540,7 +628,7 @@ int main( int argc, char* args[] ){
             }else if(meuTeclado[PIG_TECLA_2]){
                 inicial_aux = 2;
             }
-            if(meuTeclado[PIG_TECLA_ENTER]){
+            if(evento.tipoEvento == PIG_EVENTO_TECLADO && evento.teclado.acao == PIG_TECLA_LIBERADA && evento.teclado.tecla == PIG_TECLA_ENTER){
                 if(inicial_aux == 1){
                     inicial = false;
                     level = true;
@@ -550,7 +638,7 @@ int main( int argc, char* args[] ){
             }
         }
 
-        if(!tutorial && !level && !inicial){
+        if(!tutorial && !level && !inicial && !dialogo){
 
             //Desenha o mapa
             DesenhaSpriteSimples("..//images//map_holder.png",0,0,0);
@@ -562,13 +650,19 @@ int main( int argc, char* args[] ){
             //Desenha personagem principal
             DesenhaObjeto(main_char);
 
-            //Desenha fumaça do extintor e extintor de recarga
+            //Desenha fumaça do extintor, extintor de recarga, coração de cura e bota de velocidade
             if(draw_smoke){
                 DesenhaObjeto(smoke);
                 draw_smoke = false;
             }
             if(draw_reload){
                 DesenhaObjeto(reload);
+            }
+            if(draw_heart){
+                DesenhaObjeto(heart);
+            }
+            if(draw_speed){
+                DesenhaObjeto(speed);
             }
 
             //Desenha inimigos
