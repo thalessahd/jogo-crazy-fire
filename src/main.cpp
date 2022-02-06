@@ -63,7 +63,7 @@ void draw_dialogo(int stage){
 //Desenha todos os elementos da hud
 void hud_draw(int char_id, int hp, int extinguisher_id, int *ext, int *charge){
     int i =0;
-    int posx[4] = {540,640,740,840}; //Posição x de cada numero de munição dos extintores
+    int posx[4] = {550,660,770,880}; //Posição x de cada numero de munição dos extintores
 
     DesenhaObjeto(char_id); //Desenha a imagem do personagem principal na HUD
     DesenhaRetangulo(60,PIG_ALT_TELA-40,30,hp,VERMELHO); //Desenha a barra de vida do personagem na HUD
@@ -91,7 +91,16 @@ void hud_draw(int char_id, int hp, int extinguisher_id, int *ext, int *charge){
     }
 
     //Destaca o extintor selecionado
-    SetColoracaoObjeto(ext[extinguisher_id-1],VERDE);
+    //SetColoracaoObjeto(ext[extinguisher_id-1],VERDE);
+    if(extinguisher_id == 1){
+        DesenhaRetanguloVazado(505,PIG_ALT_TELA-50,48,44,VERDE);
+    }else if(extinguisher_id == 2){
+        DesenhaRetanguloVazado(615,PIG_ALT_TELA-50,48,44,VERDE);
+    }else if(extinguisher_id == 3){
+        DesenhaRetanguloVazado(725,PIG_ALT_TELA-50,48,44,VERDE);
+    }else if(extinguisher_id == 4){
+        DesenhaRetanguloVazado(835,PIG_ALT_TELA-50,48,44,VERDE);
+    }
 }
 
 //Mensagem de game over
@@ -252,7 +261,7 @@ int main( int argc, char* args[] ){
     for(i=0;i<4;i++){
         //extinguisher[i] = CriaObjeto("..//images//extinguisher.png");
         SetDimensoesObjeto(extinguisher[i],50,50);
-        MoveObjeto(extinguisher[i],500+100*i,PIG_ALT_TELA-50);
+        MoveObjeto(extinguisher[i],500+110*i,PIG_ALT_TELA-50);
     }
 
     //Criando power-up de velocidade
