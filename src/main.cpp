@@ -96,7 +96,8 @@ void hud_draw(int char_id, int hp, int extinguisher_id, int *ext, int *charge){
 
 //Mensagem de game over
 void gameover(){
-    EscreverCentralizada("GAME OVER",PIG_LARG_TELA/2,map_height/2,VERMELHO);
+    //EscreverCentralizada("GAME OVER",PIG_LARG_TELA/2,map_height/2,VERMELHO);
+    DesenhaSpriteSimples("..//images//game-over.png",0,0,0);
 }
 
 //Mensagem de pause
@@ -148,7 +149,8 @@ void draw_tutorial(){
 
 //Mensagem de vitória
 void game_win(){
-    EscreverCentralizada("VITORIA",PIG_LARG_TELA/2,map_height/2,VERDE);
+    //EscreverCentralizada("VITORIA",PIG_LARG_TELA/2,map_height/2,VERDE);
+    DesenhaSpriteSimples("..//images//vitoria.png",0,0,0);
 }
 
 int main( int argc, char* args[] ){
